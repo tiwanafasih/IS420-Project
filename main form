@@ -1,0 +1,195 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+using System.IO;
+
+namespace TiwanaHerbs
+{
+    public partial class FormMain : Form
+    {
+        public FormMain()
+        {
+            InitializeComponent();
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBoxHName_SelectedIndexChanged(object sender, EventArgs e)
+        {
+        }
+
+        private void buttonShow_Click(object sender, EventArgs e)
+        {
+            String source = @"Data Source=LAPTOP-F1CTQUS5\SQLEXPRESS01;Initial Catalog=TiwanaHerbs;Integrated Security=True";
+            SqlConnection con = new SqlConnection(source);
+            con.Open();
+            MessageBox.Show("Displaying disease and description");
+          
+
+
+
+           String sqlSelectQuery = "SELECT * FROM tblHerbs WHERE Herb_Name like'%"+textBox1.Text.ToString()+"%'"; //WHERE ID ="+ int.Parse(textBoxHNo.Text);
+            
+           SqlCommand cmd = new SqlCommand(sqlSelectQuery,con);
+            
+            //// SqlCommand cm = new SqlCommand("SELECT Herb_Name FROM tblTiwanaHerbs_H ORDER BY Herb_Name ASC",con);
+            try
+            {
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    textBox1.Text = (dr["Herb_Name"].ToString());
+                    textBoxDName.Text = (dr["Disease_Name"].ToString());
+                    textBoxHDisc.Text = (dr["Herb_Disc"].ToString());
+                    byte[] images = ((byte[])dr[3]);
+                    if (images == null)
+                    {
+                        pictureBox1.Image = null;
+                    }
+                    else
+                    {
+                        MemoryStream mstream = new MemoryStream(images);
+                        pictureBox1.Image = Image.FromStream(mstream);
+                    }
+                }
+            }catch(Exception ex)
+            {
+                MessageBox.Show("Error: "+ex.ToString());
+            }
+            // //try
+            // //{
+            // //    SqlDataReader drr = cm.ExecuteReader();
+            // //    while(drr.Read())
+            // //    {
+            // //        comboBox1.Items.Add(drr["Herb_Name"]);
+            // //    }
+            // //    drr.Close();
+
+            // //} catch(Exception ex)
+            // //{
+            // //    MessageBox.Show("fuck off");
+            // //}
+            con.Close();
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            String source = @"Data Source=LAPTOP-F1CTQUS5\SQLEXPRESS01;Initial Catalog=TiwanaHerbs;Integrated Security=True";
+            SqlConnection con = new SqlConnection(source);
+            con.Open();
+            MessageBox.Show("Displaying Herb and Description");
+
+
+
+            //byte[] images = null;
+            String sqlSelectQuery = "SELECT * FROM tblHerbs WHERE Disease_Name like'%" + textBoxDName.Text.ToString() + "%'"; //WHERE ID ="+ int.Parse(textBoxHNo.Text);
+            //String sqlq = "INSERT INTO tblHerbs(Herb_Img)Values(@images)";
+            //cmmd = new SqlCommand(sqlSelectQuery, con);
+            //cmmd.Parameters.Add(new SqlParameter("@images", images));
+            //int N = cmmd.ExecuteNonQuery();
+            SqlCommand cmd = new SqlCommand(sqlSelectQuery, con);
+            try
+            {
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                if (dr.Read())
+                {
+                    textBox1.Text = (dr["Herb_Name"].ToString());
+                    textBoxDName.Text = (dr["Disease_Name"].ToString());
+                    textBoxHDisc.Text = (dr["Herb_Disc"].ToString());
+                    //pictureBox1.Image = ByteToImage(byteArr);
+                    byte[] images = ((byte[])dr[3]);
+                    if (images == null)
+                    {
+                        pictureBox1.Image = null;
+                    }
+                    else
+                    {
+                        MemoryStream mstream = new MemoryStream(images);
+                        pictureBox1.Image = Image.FromStream(mstream);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.ToString());
+            }
+            con.Close();
+        }
+
+        private void buttonReset_Click(object sender, EventArgs e)
+        {
+            textBox1.Text = "";
+            textBoxDName.Text = "";
+            textBoxHDisc.Text = "";
+            pictureBox1.Image = null;
+        }
+
+        private void buttonExit_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void buttonBrowse_Click(object sender, EventArgs e)
+        {
+            String source = @"Data Source=LAPTOP-F1CTQUS5\SQLEXPRESS01;Initial Catalog=TiwanaHerbs;Integrated Security=True";
+            SqlConnection con = new SqlConnection(source);
+            con.Open();
+            MessageBox.Show("running");
+           // String imgLocation = "";
+            //SqlCommand cmd;
+            OpenFileDialog dg = new OpenFileDialog();
+            dg.Filter = "png files(*.png)|*.png|jpg files(*.jpg)|*.jpg|All files(*.*)|*.*";
+            if(dg.ShowDialog()==DialogResult.OK)
+            {
+                imgLocation = dg.FileName.ToString();
+                pictureBox1.ImageLocation = imgLocation;
+
+            }
+            con.Close();
+        }
+        String imgLocation = "";
+        SqlCommand cmmd;
+        
+        private void buttonsave_Click(object sender, EventArgs e)
+        {
+            String source = @"Data Source=LAPTOP-F1CTQUS5\SQLEXPRESS01;Initial Catalog=TiwanaHerbs;Integrated Security=True";
+            SqlConnection con = new SqlConnection(source);
+            con.Open();
+
+            byte[] images = null;
+            FileStream stream = new FileStream(imgLocation, FileMode.Open, FileAccess.Read);
+            BinaryReader brs = new BinaryReader(stream);
+            images = brs.ReadBytes((int)stream.Length);
+            String sqlq = "INSERT INTO tblHerbs(Herb_Name,Disease_Name,Herb_Disc,Herb_Img)Values('" + textBox1.Text + "','" + textBoxDName.Text + "','" + textBoxHDisc + "',@images)";
+            cmmd = new SqlCommand(sqlq, con);
+            cmmd.Parameters.Add(new SqlParameter("@images", images));
+            int N = cmmd.ExecuteNonQuery();
+            con.Close();
+            MessageBox.Show("Done");
+
+        }
+        public static Bitmap ByteToImage(byte[] blob)
+        {
+            MemoryStream mStream = new MemoryStream();
+            byte[] pData = blob;
+            mStream.Write(pData, 0, Convert.ToInt32(pData.Length));
+            Bitmap bm = new Bitmap(mStream, false);
+            mStream.Dispose();
+            return bm;
+        }
+    }
+}
+
